@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin nyshiweb</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crema:#EFEBE6; --claro:#AB7C67; --oscuro:#8C6152; --texto:#1F1B18;
+    --texto-suave:#6b5f55; --borde:#E3DCD2; --blanco:#FBF8F4; --rojo:#b02020;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--texto);}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
+  .hidden{display:none !important;}
+  /* Login */
+  #pageLogin{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  #pageLogin h1{font-size:28px;}
+  .btn{border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-primary{background:var(--oscuro);color:#fff;}
+  .btn-secondary{background:var(--claro);color:#fff;}
+  .btn-outline{background:transparent;border:1px solid var(--borde);color:var(--texto);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  #loginError{color:var(--rojo);font-size:13px;display:none;}
+  /* App shell */
+  #pageApp{display:none;max-width:760px;margin:0 auto;padding:16px;}
+  header.topbar{background:var(--claro);color:#fff;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  header.topbar span.brand{font-family:'Fraunces',serif;font-size:18px;}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .tab{flex:1;padding:10px;text-align:center;border-radius:8px;background:var(--blanco);border:1px solid var(--borde);cursor:pointer;font-size:14px;}
+  .tab.active{background:var(--oscuro);color:#fff;border-color:var(--oscuro);}
+  .page{display:none;}
+  .page.active{display:block;}
+  .card{background:var(--blanco);border:1px solid var(--borde);border-radius:12px;padding:16px;margin-bottom:12px;}
+  .card h3{font-size:16px;margin-bottom:4px;}
+  .card p{font-size:13px;color:var(--texto-suave);margin:2px 0;}
+  .listItem{display:flex;justify-content:space-between;align-items:center;}
+  .listItem .acciones{display:flex;gap:6px;}
+  label.field-label{font-size:12px;color:var(--texto-suave);display:block;margin:10px 0 4px;}
+  input[type=text],input[type=number],select,textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--borde);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--texto);
+  }
+  input[type=color]{width:44px;height:32px;border:none;border-radius:6px;padding:0;}
+  .chip{display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:16px;border:1px solid var(--borde);background:#fff;font-size:13px;cursor:pointer;margin:3px 4px 3px 0;user-select:none;}
+  .chip.sel{background:var(--oscuro);color:#fff;border-color:var(--oscuro);}
+  .chip.agotado{opacity:.4;text-decoration:line-through;}
+  .grupo-box{background:var(--crema);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .grupo-box .precios-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+  .grupo-box .precios-grid label{font-size:11px;color:var(--texto-suave);}
+  .color-row{background:var(--crema);border-radius:10px;padding:10px;margin-bottom:8px;}
+  .color-row .hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .color-row .hdr input[type=text]{flex:1;}
+  .thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#ddd;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--texto);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:50;display:none;}
+  .btn-danger{background:var(--rojo);color:#fff;}
+  .btn-icon{padding:8px 10px;font-size:15px;line-height:1;}
+  .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;align-items:center;justify-content:center;padding:20px;}
+  .confirm-overlay.show{display:flex;}
+  .confirm-box{background:var(--blanco);border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center;}
+  .confirm-icon{font-size:32px;margin-bottom:8px;}
+  .confirm-title{font-weight:600;font-size:16px;margin-bottom:6px;}
+  .confirm-msg{font-size:13px;color:var(--texto-suave);margin-bottom:18px;}
+  .confirm-btns{display:flex;gap:8px;justify-content:center;}
+  .confirm-btns .btn{flex:1;}
+  .toast.err{background:var(--rojo);}
+  .lock-note{font-size:11px;color:var(--rojo);margin-top:4px;}
+  .toggle-row{display:flex;align-items:center;gap:8px;margin:10px 0;}
+  .empty-state{text-align:center;padding:30px 10px;color:var(--texto-suave);font-size:13px;}
+  .field-error{font-size:11px;color:var(--rojo);margin-top:2px;}
+  .divider{border:none;border-top:1px solid var(--borde);margin:14px 0;}
+  a.small-link{font-size:12px;color:var(--claro);}
+  /* Colores predefinidos */
+  .cfg-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:1px solid var(--borde);border-radius:8px;margin-bottom:6px;}
+  .cfg-item-drag{cursor:grab;color:var(--texto-suave);font-size:16px;flex-shrink:0;}
+  .cfg-item-color{width:26px;height:26px;border-radius:50%;border:2px solid var(--borde);flex-shrink:0;}
+  .cfg-item-name{flex:1;font-size:14px;}
+  .cfg-item-toggle{background:none;border:none;cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;}
+  .cfg-item-del{background:none;border:none;cursor:pointer;font-size:15px;color:var(--rojo);padding:2px 4px;}
+  .cfg-item.hidden-item .cfg-item-name{color:var(--texto-suave);text-decoration:line-through;}
+  .cfg-add-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .cfg-add-row input[type=text]{flex:1;min-width:120px;}
+  .color-select-row{display:flex;align-items:center;gap:8px;}
+  .color-select-row select{flex:1;}
+  .color-dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--borde);flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="pageLogin">
+  <h1>nyshiweb — admin</h1>
+  <p style="color:var(--texto-suave);font-size:14px">Panel de patrones y diseños</p>
+  <button class="btn btn-primary" onclick="googleLogin()">Iniciar sesión con Google</button>
+  <p id="loginError">No tienes acceso con esta cuenta.</p>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="pageApp">
+  <header class="topbar">
+    <span class="brand">nyshiweb</span>
+    <span style="font-size:13px" id="userName"></span>
+    <button class="btn btn-outline" style="background:#fff" onclick="doLogout()">Salir</button>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" onclick="goTab(this,'pgPatrones')">Patrones</div>
+    <div class="tab" onclick="goTab(this,'pgDisenos')">Diseños</div>
+    <div class="tab" onclick="goTab(this,'pgColores')">Colores</div>
+    <div class="tab" onclick="goTab(this,'pgTallas')">Tallas</div>
+  </div>
+
+  <!-- ---------- TAB COLORES ---------- -->
+  <div class="page" id="pgColores">
+    <div class="card">
+      <h3>Colores predefinidos</h3>
+      <p>Esta lista se guarda junto con tus precios en Drive, así que se ve igual sin importar si entras desde el PC o el celular. Úsala al elegir el color de cada diseño, para que el mismo color use siempre el mismo tono exacto.</p>
+      <div id="cfgColorList"></div>
+      <div class="cfg-add-row">
+        <input type="color" id="cfgColorPicker" value="#AB7C67">
+        <input type="text" id="cfgColorInput" placeholder="Nombre del color nuevo...">
+        <button class="btn btn-secondary" onclick="cfgColorAdd()">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- TAB TALLAS ---------- -->
+  <div class="page" id="pgTallas">
+    <div class="card">
+      <h3>Banco de tallas</h3>
+      <p>Esta lista se guarda junto con tus precios en Drive. Es la que aparece como chips al armar los grupos de talla de cada patrón. Arrastra ☰ para reordenar — ese orden es el que se ve en la web. Usa 👁️ para ocultar una talla sin borrarla (sigue existiendo si algún patrón ya la usa, pero no aparece para elegir en patrones nuevos).</p>
+      <div id="cfgTallaList"></div>
+      <div class="cfg-add-row">
+        <input type="text" id="cfgTallaInput" placeholder="Nueva talla...">
+        <button class="btn btn-secondary" onclick="cfgTallaAdd()">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- TAB PATRONES ---------- -->
+  <div class="page active" id="pgPatrones">
+    <div id="listaPatrones"></div>
+    <button class="btn btn-secondary" onclick="abrirFormPatron(null)">+ Nuevo patrón</button>
+
+    <div class="card hidden" id="formPatronCard">
+      <h3 id="formPatronTitulo">Nuevo patrón</h3>
+
+      <label class="field-label">Nombre del patrón</label>
+      <input type="text" id="pNombre" oninput="onNombrePatronInput()" placeholder="Ej. Poleras de franela">
+
+      <label class="field-label">id (se genera solo, editable)</label>
+      <input type="text" id="pId">
+      <p class="lock-note hidden" id="pIdLockNote">Este id no se puede editar: ya tiene diseños asociados.</p>
+
+      <label class="field-label">Descripción</label>
+      <textarea id="pDescripcion" rows="3" placeholder="Ej. Tela suave de algodón peruano, ideal para uso diario."></textarea>
+      <p style="font-size:11px;color:var(--texto-suave)">Se copia automáticamente a los diseños nuevos de este patrón. Cada diseño la puede editar después sin afectar esta ni a los demás.</p>
+
+      <label class="field-label">Foto de portada</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <img id="pFotoPreview" class="thumb" style="width:60px;height:60px" src="">
+        <input type="file" id="pFotoInput" accept="image/*" onchange="previsualizarFotoLocal(this,'pFotoPreview')">
+      </div>
+      <p style="font-size:11px;color:var(--texto-suave)">Opcional si este es tu único patrón activo. Obligatoria en cuanto actives un segundo.</p>
+
+      <label class="field-label">Foto de tallas y medidas</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <img id="pMedidasPreview" class="thumb" style="width:60px;height:60px" src="">
+        <input type="file" id="pMedidasInput" accept="image/*" onchange="previsualizarFotoLocal(this,'pMedidasPreview')">
+      </div>
+      <p style="font-size:11px;color:var(--texto-suave)">Opcional. Si la subes, en la web aparece un link "Ver tabla de tallas y medidas" para este patrón.</p>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="pActivo" checked>
+        <label for="pActivo" style="font-size:13px">Patrón activo (visible en la web)</label>
+      </div>
+
+      <hr class="divider">
+      <label class="field-label">Tramos de cantidad (fijos, de referencia)</label>
+      <p style="font-size:12px;color:var(--texto-suave)">Unidad (1-2) · Cuarto de docena (3-5) · Media docena (6-11) · Docena (12+)</p>
+
+      <hr class="divider">
+      <label class="field-label">Grupo de mezcla (opcional)</label>
+      <input type="text" id="pGrupoMezcla" placeholder="Ej. conjuntos-polera-joger">
+      <p style="font-size:12px;color:var(--texto-suave)">Si dos o más patrones comparten el mismo texto aquí, sus piezas se suman entre sí para alcanzar cuarto/media docena/docena (cada uno cobrado a su propio precio). Déjalo vacío para que este patrón NO se mezcle con ningún otro.</p>
+
+      <hr class="divider">
+      <label class="field-label">Grupos de talla y precios</label>
+      <div id="gruposWrap"></div>
+      <button class="btn btn-outline" style="background:#fff;font-size:12px" onclick="agregarGrupoTalla()">+ Agregar grupo de talla</button>
+      <p class="field-error hidden" id="pGruposError"></p>
+
+      <hr class="divider">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="btnGuardarPatron" onclick="guardarPatron()">Guardar patrón</button>
+        <button class="btn btn-outline" style="background:#fff" onclick="cerrarFormPatron()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- TAB DISEÑOS ---------- -->
+  <div class="page" id="pgDisenos">
+    <div id="listaDisenos"></div>
+    <button class="btn btn-secondary" onclick="abrirFormDiseno(null)">+ Nuevo diseño</button>
+
+    <div class="card hidden" id="formDisenoCard">
+      <h3 id="formDisenoTitulo">Nuevo diseño</h3>
+
+      <label class="field-label">Patrón</label>
+      <select id="dPatron" onchange="onPatronDisenoChange()"></select>
+
+      <label class="field-label">Nombre del diseño</label>
+      <input type="text" id="dNombre" placeholder="Ej. Pato bordado">
+
+      <label class="field-label">Descripción</label>
+      <textarea id="dDescripcion" rows="3" oninput="descripcionTocada=true" placeholder="Se copia del patrón; puedes editarla para este diseño en particular."></textarea>
+
+      <p class="field-label" style="margin-top:10px">Tallas de este patrón (se definen en la pestaña Patrones)</p>
+      <div id="dTallasOfrecidas"></div>
+
+      <hr class="divider">
+      <label class="field-label">Colores, fotos y stock por talla</label>
+      <div id="dColoresWrap"></div>
+      <button class="btn btn-outline" style="background:#fff;font-size:12px" onclick="agregarColorDiseno()">+ Agregar color</button>
+      <p class="field-error hidden" id="dColoresError"></p>
+
+      <hr class="divider">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="dSaveBtn" onclick="guardarDiseno()">Guardar diseño</button>
+        <button class="btn btn-outline" style="background:#fff" onclick="cerrarFormDiseno()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">¿Eliminar?</div>
+    <div class="confirm-msg" id="confirmMsg">Esta acción no se puede deshacer.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-outline" style="background:#fff" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarEliminacion()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN — completar tras crear el proyecto OAuth y
+   el blog de nyshiweb en Blogger (ver punto 11 del análisis).
+   ========================================================= */
+var BLOG_ID       = '5256747470412028229';
+var CLIENT_ID     = '150286475233-t0j17fmuvi38korl9pk2vj85bkifqa53.apps.googleusercontent.com';
+var ADMIN_EMAIL   = 'nyshitex@gmail.com'; // confirmar si nyshiweb usa la misma cuenta
+var PRECIOS_FILENAME = 'nyshiweb-precios.json';
+var TRAMOS_FIJOS = [
+  {label:'Unidad', min:1, max:2},
+  {label:'Cuarto de docena', min:3, max:5},
+  {label:'Media docena', min:6, max:11},
+  {label:'Docena', min:12, max:null}
+];
+
+var token = null;
+var precios = {patrones:[], coloresGuardados:[]};        // contenido de precios.json (Drive)
+var preciosFileId = null;           // id del archivo en Drive, null si aún no existe
+var posts = [];                     // posts de Blogger (diseños) cacheados
+var editandoPatronId = null;        // id del patrón que se está editando (null = nuevo)
+var editandoDisenoId = null;        // id del post que se está editando (null = nuevo)
+var gruposEnEdicion = [];           // grupos de talla del formulario de patrón, en memoria
+var coloresEnEdicion = [];          // colores del formulario de diseño, en memoria
+var coloresABorrarDeDrive = [];     // ids de Drive de fotos quitadas/reemplazadas durante la edición, pendientes de borrar recién al guardar
+var fotosSubidasEnSesion = [];      // ids de Drive subidos en esta sesión de edición, pendientes de borrar si se cancela sin guardar
+var fotosABorrarPatron = [];        // ids de Drive de portada/medidas de PATRÓN reemplazadas durante la edición, pendientes de borrar recién al guardar
+var tallasOfrecidasEdicion = [];    // tallas elegidas para el diseño en edición
+var descripcionTocada = false;      // true = el usuario ya editó la descripción a mano en esta sesión de edición (no se pisa al cambiar de patrón)
+
+/* ================= AUTH (mismo patrón que el admin de bebeclothes) ================= */
+function googleLogin() {
+  var scope = 'https://www.googleapis.com/auth/blogger https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+  var redirect = window.location.href.split('#')[0].split('?')[0];
+  var url = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + CLIENT_ID
+    + '&redirect_uri=' + encodeURIComponent(redirect)
+    + '&response_type=token'
+    + '&scope=' + encodeURIComponent(scope)
+    + '&prompt=select_account';
+  window.location.href = url;
+}
+
+function checkOAuthCallback() {
+  var hash = window.location.hash;
+  if (!hash || hash.length < 2) return;
+  var params = {};
+  hash.substring(1).split('&').forEach(function(p){
+    var eq = p.indexOf('=');
+    if (eq > -1) params[p.substring(0,eq)] = decodeURIComponent(p.substring(eq+1));
+  });
+  history.replaceState(null, '', window.location.pathname);
+  if (params.error || !params.access_token) return;
+  token = params.access_token;
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{'Authorization':'Bearer '+token}})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var email = d.email || '';
+      if (email && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        showApp(d.name || 'Admin');
+      } else {
+        token = null;
+        document.getElementById('loginError').style.display = 'block';
+      }
+    })
+    .catch(function(){ token = null; document.getElementById('loginError').style.display = 'block'; });
+}
+
+function showApp(name) {
+  document.getElementById('pageLogin').style.display = 'none';
+  document.getElementById('pageApp').style.display = 'block';
+  document.getElementById('userName').textContent = name;
+  cargarPrecios(function(){ renderListaPatrones(); cfgRenderColors(); cfgRenderTallas(); });
+  cargarDisenos(function(){ renderListaDisenos(); });
+}
+
+function doLogout() {
+  token = null;
+  document.getElementById('pageLogin').style.display = 'flex';
+  document.getElementById('pageApp').style.display = 'none';
+}
+
+/* =========================================================
+   COLORES PREDEFINIDOS — se guardan dentro de precios.json en
+   Drive (junto con patrones), así el hex exacto es siempre el
+   mismo sin importar desde qué PC o celular se cargue un diseño
+   (evita el problema de que el mismo "rojo" se vea distinto según
+   el selector nativo de color de cada dispositivo).
+   ========================================================= */
+var NY_DEFAULT_COLORS = [
+  {name:'Blanco', hex:'#FFFFFF', visible:true},
+  {name:'Celeste', hex:'#A9D4EC', visible:true},
+  {name:'Rosado', hex:'#F6C8D9', visible:true}
+];
+function nyGetColors() { return precios.coloresGuardados || []; }
+
+function cfgRenderColors() {
+  var list = document.getElementById('cfgColorList');
+  if (!list) return;
+  var colors = nyGetColors();
+  list.innerHTML = '';
+  colors.forEach(function(c, i){
+    var item = document.createElement('div');
+    item.className = 'cfg-item';
+    item.innerHTML =
+      '<div class="cfg-item-color" style="background:' + c.hex + ';"></div>' +
+      '<span class="cfg-item-name">' + c.name + '</span>' +
+      '<button class="cfg-item-del" title="Eliminar" onclick="cfgColorDel(' + i + ')">🗑️</button>';
+    list.appendChild(item);
+  });
+  refreshColorSelects();
+}
+function cfgColorDel(i) {
+  var backup = precios.coloresGuardados.slice();
+  precios.coloresGuardados.splice(i, 1);
+  guardarPreciosEnDrive(function(ok){
+    if (ok) { toast('Color eliminado'); cfgRenderColors(); }
+    else { precios.coloresGuardados = backup; }
+  });
+}
+function cfgColorAdd() {
+  var inp = document.getElementById('cfgColorInput');
+  var picker = document.getElementById('cfgColorPicker');
+  var val = inp.value.trim();
+  if (!val) { toast('Escribe el nombre del color', 'err'); return; }
+  var colors = nyGetColors();
+  if (colors.find(function(c){ return c.name.toLowerCase() === val.toLowerCase(); })) {
+    toast('Ese color ya existe', 'err'); return;
+  }
+  precios.coloresGuardados.push({name: val, hex: picker.value, visible: true});
+  guardarPreciosEnDrive(function(ok){
+    if (ok) {
+      toast('✅ Color "' + val + '" agregado', 'ok');
+      inp.value = '';
+      picker.value = '#AB7C67';
+      cfgRenderColors();
+    } else {
+      precios.coloresGuardados.pop();
+    }
+  });
+}
+// Refresca todos los <select> de color dentro del formulario de diseño abierto
+function refreshColorSelects() {
+  document.querySelectorAll('.color-select').forEach(function(sel){
+    var ci = parseInt(sel.dataset.ci, 10);
+    pintarSelectColor(sel, coloresEnEdicion[ci]);
+  });
+}
+function pintarSelectColor(sel, colorActual) {
+  var colores = nyGetColors();
+  var opciones = colores.map(function(c){
+    var sel2 = (colorActual && colorActual.nombre === c.name) ? ' selected' : '';
+    return '<option value="' + c.name + '"' + sel2 + '>' + c.name + '</option>';
+  }).join('');
+  sel.innerHTML = opciones + '<option value="__otro__">Otro color…</option>';
+  if (colorActual && !colores.find(function(c){ return c.name === colorActual.nombre; })) {
+    sel.insertAdjacentHTML('afterbegin', '<option value="' + colorActual.nombre + '" selected>' + colorActual.nombre + ' (no está en la lista)</option>');
+  }
+}
+
+/* =========================================================
+   BANCO DE TALLAS (mismo espíritu que el banco de colores):
+   se guarda en precios.json junto con lo demás — no en
+   localStorage, para que se vea igual en cualquier dispositivo.
+   Orden de esta lista = orden en que aparecen los chips y,
+   por lo tanto, el orden en que se ven las tallas en la web.
+   ========================================================= */
+var NY_DEFAULT_TALLAS = [
+  {name:'2', visible:true}, {name:'4', visible:true}, {name:'6', visible:true}, {name:'8', visible:true},
+  {name:'10', visible:true}, {name:'12', visible:true}, {name:'14', visible:true}, {name:'16', visible:true}
+];
+function nyGetTallas() { return precios.tallasBanco || []; }
+
+function cfgRenderTallas() {
+  var list = document.getElementById('cfgTallaList');
+  if (!list) return;
+  var tallas = nyGetTallas();
+  list.innerHTML = '';
+  tallas.forEach(function(t, i){
+    var item = document.createElement('div');
+    item.className = 'cfg-item' + (t.visible ? '' : ' hidden-item');
+    item.draggable = true;
+    item.dataset.idx = i;
+    item.innerHTML =
+      '<span class="cfg-item-drag">☰</span>' +
+      '<span class="cfg-item-name">' + t.name + '</span>' +
+      '<button class="cfg-item-toggle" title="' + (t.visible ? 'Ocultar' : 'Mostrar') + '" onclick="cfgTallaToggle(' + i + ')">' + (t.visible ? '👁️' : '🚫') + '</button>' +
+      '<button class="cfg-item-del" title="Eliminar" onclick="cfgTallaDel(' + i + ')">🗑️</button>';
+    list.appendChild(item);
+  });
+  cfgTallaDragSetup();
+  renderGrupos(); // los chips del formulario de patrón abierto (si hay uno) reflejan el banco actualizado
+}
+function cfgTallaDel(i) {
+  var backup = precios.tallasBanco.slice();
+  precios.tallasBanco.splice(i, 1);
+  guardarPreciosEnDrive(function(ok){
+    if (ok) { toast('Talla eliminada'); cfgRenderTallas(); }
+    else { precios.tallasBanco = backup; }
+  });
+}
+function cfgTallaToggle(i) {
+  var backup = precios.tallasBanco.slice();
+  precios.tallasBanco[i].visible = !precios.tallasBanco[i].visible;
+  guardarPreciosEnDrive(function(ok){
+    if (ok) { cfgRenderTallas(); }
+    else { precios.tallasBanco = backup; }
+  });
+}
+function cfgTallaAdd() {
+  var inp = document.getElementById('cfgTallaInput');
+  var val = inp.value.trim();
+  if (!val) { toast('Escribe el nombre de la talla', 'err'); return; }
+  var tallas = nyGetTallas();
+  if (tallas.find(function(t){ return t.name.toLowerCase() === val.toLowerCase(); })) {
+    toast('Esa talla ya existe', 'err'); return;
+  }
+  precios.tallasBanco.push({name: val, visible: true});
+  guardarPreciosEnDrive(function(ok){
+    if (ok) {
+      toast('✅ Talla "' + val + '" agregada', 'ok');
+      inp.value = '';
+      cfgRenderTallas();
+    } else {
+      precios.tallasBanco.pop();
+    }
+  });
+}
+// Arrastrar para reordenar (☰): al soltar, guarda el nuevo orden en Drive de una vez,
+// igual que las demás acciones de este panel (agregar/ocultar/eliminar).
+function cfgTallaDragSetup() {
+  var list = document.getElementById('cfgTallaList');
+  var items = list.querySelectorAll('.cfg-item');
+  var dragSrc = null;
+  items.forEach(function(item){
+    item.addEventListener('dragstart', function(){ dragSrc = item; item.style.opacity = '.4'; });
+    item.addEventListener('dragend', function(){ item.style.opacity = ''; });
+    item.addEventListener('dragover', function(e){ e.preventDefault(); });
+    item.addEventListener('drop', function(e){
+      e.preventDefault();
+      if (!dragSrc || dragSrc === item) return;
+      var allItems = Array.from(list.querySelectorAll('.cfg-item'));
+      var fromIdx = allItems.indexOf(dragSrc);
+      var toIdx = allItems.indexOf(item);
+      if (fromIdx < toIdx) list.insertBefore(dragSrc, item.nextSibling); else list.insertBefore(dragSrc, item);
+      // Reconstruye precios.tallasBanco en el nuevo orden visual y lo guarda
+      var nombresEnOrden = Array.from(list.querySelectorAll('.cfg-item-name')).map(function(el){ return el.textContent; });
+      var backup = precios.tallasBanco.slice();
+      precios.tallasBanco = nombresEnOrden.map(function(nombre){
+        return backup.find(function(t){ return t.name === nombre; });
+      });
+      guardarPreciosEnDrive(function(ok){
+        if (ok) { cfgRenderTallas(); }
+        else { precios.tallasBanco = backup; cfgRenderTallas(); toast('No se pudo guardar el nuevo orden','err'); }
+      });
+    });
+  });
+}
+
+function goTab(el, pageId) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById(pageId).classList.add('active');
+}
+
+function toast(msg, tipo) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (tipo==='err' ? ' err' : '');
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display = 'none'; }, 3200);
+}
+
+/* ================= BLOGGER API (idéntico al patrón existente) ================= */
+function api(path, opts) {
+  var headers = {'Content-Type':'application/json'};
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return fetch('https://www.googleapis.com/blogger/v3/blogs/'+BLOG_ID+path, {
+    headers: headers,
+    method: opts ? (opts.method||'GET') : 'GET',
+    body: opts && opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function(r){
+    if (r.status === 204) return {};
+    return r.json().then(function(d){ if (d.error) throw new Error(d.error.message||'Error API'); return d; });
+  });
+}
+
+/* ================= DRIVE: precios.json ================= */
+function driveBuscarArchivo(nombre, callback) {
+  var q = encodeURIComponent("name='"+nombre+"' and trashed=false");
+  fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)', {
+    headers:{'Authorization':'Bearer '+token}
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ callback((d.files && d.files[0]) ? d.files[0].id : null); })
+    .catch(function(){ callback(null); });
+}
+
+function cargarPrecios(callback) {
+  if (!token) { callback(); return; }
+  driveBuscarArchivo(PRECIOS_FILENAME, function(fileId){
+    if (!fileId) { preciosFileId = null; precios = {patrones:[], coloresGuardados: NY_DEFAULT_COLORS.slice(), tallasBanco: NY_DEFAULT_TALLAS.slice()}; callback(); return; }
+    preciosFileId = fileId;
+    fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media', {
+      headers:{'Authorization':'Bearer '+token}
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        precios = d && d.patrones ? d : {patrones:[]};
+        if (!precios.coloresGuardados) precios.coloresGuardados = NY_DEFAULT_COLORS.slice();
+        if (!precios.tallasBanco) precios.tallasBanco = NY_DEFAULT_TALLAS.slice();
+        // respaldo local, para cuando falle la carga en visitas futuras (mismo mecanismo que el theme)
+        try { localStorage.setItem('nyshiweb_precios_backup', JSON.stringify(precios)); } catch(e){}
+        callback();
+      })
+      .catch(function(){
+        toast('No se pudo leer precios.json, usando respaldo local si existe', 'err');
+        try {
+          var backup = localStorage.getItem('nyshiweb_precios_backup');
+          precios = backup ? JSON.parse(backup) : {patrones:[]};
+        } catch(e){ precios = {patrones:[]}; }
+        if (!precios.coloresGuardados) precios.coloresGuardados = NY_DEFAULT_COLORS.slice();
+        if (!precios.tallasBanco) precios.tallasBanco = NY_DEFAULT_TALLAS.slice();
+        callback();
+      });
+  });
+}
+
+function guardarPreciosEnDrive(callback) {
+  var contenido = JSON.stringify(precios, null, 2);
+  if (preciosFileId) {
+    fetch('https://www.googleapis.com/upload/drive/v3/files/'+preciosFileId+'?uploadType=media', {
+      method:'PATCH',
+      headers:{'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+      body: contenido
+    }).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(){ try{ localStorage.setItem('nyshiweb_precios_backup', contenido); }catch(e){} callback(true); })
+      .catch(function(err){ toast('Error guardando precios: '+err.message,'err'); callback(false); });
+  } else {
+    var meta = {name: PRECIOS_FILENAME, mimeType:'application/json'};
+    var form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
+    form.append('file', new Blob([contenido], {type:'application/json'}));
+    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+      method:'POST', headers:{'Authorization':'Bearer '+token}, body:form
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d.id) throw new Error('Drive no devolvió ID');
+        preciosFileId = d.id;
+        // Hacerlo público de solo lectura para que el theme lo lea sin autenticarse
+        return fetch('https://www.googleapis.com/drive/v3/files/'+d.id+'/permissions', {
+          method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+          body: JSON.stringify({role:'reader', type:'anyone'})
+        });
+      })
+      .then(function(){ try{ localStorage.setItem('nyshiweb_precios_backup', contenido); }catch(e){} callback(true); })
+      .catch(function(err){ toast('Error creando precios.json: '+err.message,'err'); callback(false); });
+  }
+}
+
+/* ================= DRIVE: eliminar archivos (foto de color, portada, medidas...) ================= */
+function extractDriveIds(texto) {
+  var ids = [];
+  var matches = (texto || '').match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/g) || [];
+  matches.forEach(function(m) {
+    var idMatch = m.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (idMatch && ids.indexOf(idMatch[1]) === -1) ids.push(idMatch[1]);
+  });
+  return ids;
+}
+function deleteDriveFiles(ids, callback) {
+  if (!ids.length) { callback(0, 0); return; }
+  var done = 0, errors = 0, total = ids.length;
+  ids.forEach(function(fileId) {
+    fetch('https://www.googleapis.com/drive/v3/files/' + fileId, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(function(r) { if (!r.ok && r.status !== 404) errors++; })
+    .catch(function(){ errors++; })
+    .finally(function(){
+      done++;
+      if (done === total) callback(done - errors, errors);
+    });
+  });
+}
+
+/* ================= CONFIRMAR ELIMINACIÓN (modal compartido) ================= */
+var confirmDeleteCallback = null;
+function askConfirm(mensaje, callback) {
+  confirmDeleteCallback = callback;
+  document.getElementById('confirmMsg').textContent = mensaje;
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').classList.remove('show');
+  confirmDeleteCallback = null;
+}
+function confirmarEliminacion(){
+  var cb = confirmDeleteCallback;
+  closeConfirm();
+  if (cb) cb();
+}
+
+/* ================= PREVIEW LOCAL (antes de subir a Drive) ================= */
+function previsualizarFotoLocal(input, imgId) {
+  var img = document.getElementById(imgId);
+  if (!input.files || !input.files[0]) return;
+  if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src); // libera la preview anterior, si había
+  img.src = URL.createObjectURL(input.files[0]);
+}
+
+/* ================= DRIVE: subir una foto (idéntico al patrón existente) ================= */
+function subirUnaFoto(file, callback) {
+  if (!token) { toast('Necesitas sesión Google para subir fotos','err'); callback(null); return; }
+  if (!file) { callback(null); return; }
+  var meta = {name: 'ny_'+Date.now()+'_'+file.name, mimeType: file.type};
+  var form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
+  form.append('file', file);
+  fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+    method:'POST', headers:{'Authorization':'Bearer '+token}, body:form
+  }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.id) throw new Error('Drive no devolvió ID');
+      return fetch('https://www.googleapis.com/drive/v3/files/'+d.id+'/permissions', {
+        method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body: JSON.stringify({role:'reader', type:'anyone'})
+      }).then(function(){ callback('https://lh3.googleusercontent.com/d/'+d.id+'=w800'); });
+    })
+    .catch(function(err){ toast('Error subiendo foto: '+err.message,'err'); callback(null); });
+}
+
+/* ================= UTIL ================= */
+function slugify(texto) {
+  return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+function patronPorId(id) {
+  return precios.patrones.find(function(p){ return p.id === id; }) || null;
+}
+
+// Para guardar/leer texto libre (descripción) dentro del HTML del post sin romperlo
+function escaparTexto(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function desescaparTexto(s) {
+  return String(s||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+}
+
+// Une todas las tallas de todos los grupos de un patrón (universo de tallas disponible para diseños)
+function tallasDelPatron(patron) {
+  var set = [];
+  (patron.gruposTalla||[]).forEach(function(g){
+    g.tallas.forEach(function(t){ if (set.indexOf(t)===-1) set.push(t); });
+  });
+  return set;
+}
+
+// Comprueba si un patrón ya tiene diseños (posts con ese label) — usado para bloquear el id
+function patronTieneDisenos(patronId, callback) {
+  if (!BLOG_ID || BLOG_ID.indexOf('PENDIENTE')===0) { callback(false); return; } // aún sin blog configurado
+  api('/posts?labels='+encodeURIComponent(patronId)+'&maxResults=1&fields=items(id)')
+    .then(function(d){ callback(!!(d.items && d.items.length)); })
+    .catch(function(){ callback(false); });
+}
+
+function eliminarPatron(id) {
+  var patron = patronPorId(id);
+  if (!patron) return;
+  patronTieneDisenos(id, function(tiene){
+    if (tiene) {
+      toast('Este patrón tiene diseños asociados. Bórralos o cámbialos de patrón primero, desde la pestaña Diseños.','err');
+      return;
+    }
+    askConfirm('¿Eliminar el patrón "'+patron.nombre+'"? Esto borra sus fotos de Drive (portada y medidas). No se puede deshacer.', function(){
+      var driveIds = extractDriveIds(patron.fotoPortada||'').concat(extractDriveIds(patron.fotoMedidas||''));
+      deleteDriveFiles(driveIds, function(deleted, errors){
+        precios.patrones = precios.patrones.filter(function(p){ return p.id !== id; });
+        guardarPreciosEnDrive(function(ok){
+          if (ok) {
+            var msg = 'Patrón eliminado';
+            if (driveIds.length) {
+              msg += ' · '+deleted+' foto(s) borrada(s) de Drive';
+              if (errors) msg += ' ('+errors+' con error)';
+            }
+            toast(msg);
+            renderListaPatrones();
+          }
+        });
+      });
+    });
+  });
+}
+
+/* =========================================================
+   PANTALLA 1 — PATRONES
+   ========================================================= */
+function renderListaPatrones() {
+  var wrap = document.getElementById('listaPatrones');
+  if (!precios.patrones.length) {
+    wrap.innerHTML = '<div class="empty-state">Aún no hay patrones. Crea el primero abajo.</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  precios.patrones.forEach(function(p){
+    var div = document.createElement('div');
+    div.className = 'card listItem';
+    div.innerHTML =
+      '<div><h3>'+p.nombre+'</h3>'+
+      '<p>id: '+p.id+' · '+(p.activo?'Activo':'Inactivo')+' · '+(p.gruposTalla||[]).length+' grupo(s) de talla'+
+      (p.grupoMezcla ? ' · mezcla: '+p.grupoMezcla : '')+'</p></div>'+
+      '<div class="acciones"><button class="btn btn-outline" style="background:#fff" onclick="abrirFormPatron(\''+p.id+'\')">Editar</button>'+
+      '<button class="btn btn-danger btn-icon" title="Eliminar" onclick="eliminarPatron(\''+p.id+'\')">🗑️</button></div>';
+    wrap.appendChild(div);
+  });
+}
+
+function abrirFormPatron(id) {
+  editandoPatronId = id;
+  fotosABorrarPatron = [];
+  var patron = id ? patronPorId(id) : null;
+  document.getElementById('formPatronTitulo').textContent = patron ? 'Editar patrón' : 'Nuevo patrón';
+  document.getElementById('pNombre').value = patron ? patron.nombre : '';
+  document.getElementById('pId').value = patron ? patron.id : '';
+  document.getElementById('pDescripcion').value = patron ? (patron.descripcion || '') : '';
+  document.getElementById('pFotoPreview').src = patron && patron.fotoPortada ? patron.fotoPortada : '';
+  document.getElementById('pFotoInput').value = '';
+  document.getElementById('pMedidasPreview').src = patron && patron.fotoMedidas ? patron.fotoMedidas : '';
+  document.getElementById('pMedidasInput').value = '';
+  document.getElementById('pActivo').checked = patron ? !!patron.activo : true;
+  document.getElementById('pGrupoMezcla').value = (patron && patron.grupoMezcla) ? patron.grupoMezcla : '';
+  gruposEnEdicion = patron ? JSON.parse(JSON.stringify(patron.gruposTalla||[])) : [
+    {id:'regular', tallas:[], precios:{'Unidad':0,'Cuarto de docena':0,'Media docena':0,'Docena':0}}
+  ];
+  renderGrupos();
+
+  if (patron) {
+    patronTieneDisenos(patron.id, function(tiene){
+      document.getElementById('pId').disabled = tiene;
+      document.getElementById('pIdLockNote').classList.toggle('hidden', !tiene);
+    });
+  } else {
+    document.getElementById('pId').disabled = false;
+    document.getElementById('pIdLockNote').classList.add('hidden');
+  }
+
+  document.getElementById('formPatronCard').classList.remove('hidden');
+}
+
+function cerrarFormPatron() {
+  document.getElementById('formPatronCard').classList.add('hidden');
+  editandoPatronId = null;
+  fotosABorrarPatron = [];
+}
+
+function onNombrePatronInput() {
+  // El id se autogenera solo si el usuario no lo ha tocado a mano todavía (patrón nuevo)
+  if (editandoPatronId) return;
+  document.getElementById('pId').value = slugify(document.getElementById('pNombre').value);
+}
+
+function renderGrupos() {
+  var wrap = document.getElementById('gruposWrap');
+  if (!wrap) return; // el form de patrón puede no estar abierto (ej. al guardar tallas desde la pestaña Tallas)
+  wrap.innerHTML = '';
+  var bancoTallas = nyGetTallas();
+  var nombresVisibles = bancoTallas.filter(function(t){ return t.visible; }).map(function(t){ return t.name; });
+  gruposEnEdicion.forEach(function(g, gi){
+    var box = document.createElement('div');
+    box.className = 'grupo-box';
+    // chips a mostrar = tallas visibles del banco + cualquier talla ya seleccionada aunque esté oculta/borrada del banco
+    // (para no "esconder" una talla que el patrón ya tenía guardada)
+    var nombresChips = nombresVisibles.slice();
+    g.tallas.forEach(function(t){ if (nombresChips.indexOf(t) === -1) nombresChips.push(t); });
+    var tallasHtml = nombresChips.map(function(t){
+      var sel = g.tallas.indexOf(t) > -1;
+      return '<span class="chip'+(sel?' sel':'')+'" onclick="toggleTallaGrupo('+gi+',\''+t+'\')">'+t+'</span>';
+    }).join('');
+    var preciosHtml = TRAMOS_FIJOS.map(function(tr){
+      var val = (g.precios && g.precios[tr.label]!==undefined) ? g.precios[tr.label] : '';
+      return '<div><label>'+tr.label+'</label><input type="number" min="0" step="0.01" value="'+val+'" onchange="setPrecioGrupo('+gi+',\''+tr.label+'\',this.value)"></div>';
+    }).join('');
+    box.innerHTML =
+      '<label class="field-label">Nombre del grupo</label>'+
+      '<input type="text" value="'+g.id+'" onchange="setNombreGrupo('+gi+',this.value)">'+
+      '<label class="field-label">Tallas de este grupo</label><div>'+tallasHtml+'</div>'+
+      '<div class="precios-grid">'+preciosHtml+'</div>'+
+      (gruposEnEdicion.length>1 ? '<button class="btn btn-outline" style="background:#fff;font-size:11px;margin-top:8px" onclick="quitarGrupo('+gi+')">Quitar grupo</button>' : '');
+    wrap.appendChild(box);
+  });
+}
+function agregarGrupoTalla(){
+  gruposEnEdicion.push({id:'nuevo-grupo', tallas:[], precios:{'Unidad':0,'Cuarto de docena':0,'Media docena':0,'Docena':0}});
+  renderGrupos();
+}
+function quitarGrupo(gi){ gruposEnEdicion.splice(gi,1); renderGrupos(); }
+function setNombreGrupo(gi, val){ gruposEnEdicion[gi].id = val.trim() || ('grupo'+gi); }
+function toggleTallaGrupo(gi, talla){
+  var g = gruposEnEdicion[gi];
+  var idx = g.tallas.indexOf(talla);
+  if (idx>-1) g.tallas.splice(idx,1); else g.tallas.push(talla);
+  // El orden guardado siempre sigue el orden del banco de tallas (precios.tallasBanco),
+  // sin importar en qué orden se hizo clic — así el theme muestra 2, 4, 6... y no el orden de selección.
+  var nombresBanco = nyGetTallas().map(function(t){ return t.name; });
+  g.tallas.sort(function(a,b){ return nombresBanco.indexOf(a) - nombresBanco.indexOf(b); });
+  renderGrupos();
+}
+function setPrecioGrupo(gi, tramoLabel, val){
+  gruposEnEdicion[gi].precios[tramoLabel] = parseFloat(val)||0;
+}
+
+function guardarPatron() {
+  var btnGuardar = document.getElementById('btnGuardarPatron');
+  if (btnGuardar.disabled) return; // ya hay un guardado en curso para este patrón, ignora el clic repetido
+
+  var nombre = document.getElementById('pNombre').value.trim();
+  var id = document.getElementById('pId').value.trim();
+  var activo = document.getElementById('pActivo').checked;
+  var errorBox = document.getElementById('pGruposError');
+  errorBox.classList.add('hidden');
+  var idOriginal = editandoPatronId; // se guarda aparte: así, aunque otra operación cambie editandoPatronId mientras este guardado sigue en curso, este guardado sigue apuntando al patrón correcto
+
+  if (!nombre || !id) { toast('Nombre e id son obligatorios','err'); return; }
+
+  // Validar id único (salvo que sea el mismo patrón que se está editando)
+  var duplicado = precios.patrones.some(function(p){ return p.id===id && p.id!==idOriginal; });
+  if (duplicado) { toast('Ya existe un patrón con ese id','err'); return; }
+
+  // Validar que cada grupo tenga al menos 1 talla, y que ninguna talla se repita entre grupos
+  var tallasVistas = {};
+  for (var i=0;i<gruposEnEdicion.length;i++){
+    if (!gruposEnEdicion[i].tallas.length){
+      errorBox.textContent = 'El grupo "'+gruposEnEdicion[i].id+'" no tiene ninguna talla asignada.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+    for (var j=0;j<gruposEnEdicion[i].tallas.length;j++){
+      var t = gruposEnEdicion[i].tallas[j];
+      if (tallasVistas[t]){
+        errorBox.textContent = 'La talla '+t+' está en más de un grupo. Cada talla va en un solo grupo.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+      tallasVistas[t] = true;
+    }
+  }
+
+  function finalizarGuardado(fotoUrl, fotoMedidasUrl){
+    var grupoMezcla = document.getElementById('pGrupoMezcla').value.trim();
+    var patronData = {
+      id: id, nombre: nombre, activo: activo,
+      descripcion: document.getElementById('pDescripcion').value.trim(),
+      fotoPortada: fotoUrl,
+      fotoMedidas: fotoMedidasUrl,
+      tramos: TRAMOS_FIJOS,
+      grupoMezcla: grupoMezcla, // vacío = no se mezcla con otros patrones
+      gruposTalla: gruposEnEdicion
+    };
+    var idx = precios.patrones.findIndex(function(p){ return p.id===idOriginal; });
+    if (idx > -1) precios.patrones[idx] = patronData; else precios.patrones.push(patronData);
+
+    guardarPreciosEnDrive(function(ok){
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Guardar patrón';
+      if (ok){
+        var aBorrar = fotosABorrarPatron.slice();
+        fotosABorrarPatron = [];
+        cerrarFormPatron();
+        renderListaPatrones();
+        if (aBorrar.length) {
+          deleteDriveFiles(aBorrar, function(deleted, errors){
+            var msg = 'Patrón guardado · '+deleted+' foto(s) vieja(s) borrada(s) de Drive';
+            if (errors) msg += ' ('+errors+' con error)';
+            toast(msg, errors ? 'err' : null);
+          });
+        } else {
+          toast('Patrón guardado');
+        }
+      }
+    });
+  }
+
+  var fileInput = document.getElementById('pFotoInput');
+  var medidasInput = document.getElementById('pMedidasInput');
+  var actual = patronPorId(idOriginal);
+  var fotoActual = actual ? actual.fotoPortada : '';
+  var fotoMedidasActual = actual ? (actual.fotoMedidas || '') : '';
+  var tieneFotoNueva = fileInput.files && fileInput.files[0];
+  var tieneMedidasNueva = medidasInput.files && medidasInput.files[0];
+
+  // Si este patrón queda activo y ya hay (o quedará habiendo) 2+ patrones activos, la portada es obligatoria
+  if (activo && !tieneFotoNueva && !fotoActual) {
+    var otrosActivos = precios.patrones.filter(function(p){ return p.activo && p.id!==idOriginal; }).length;
+    if (otrosActivos >= 1) {
+      toast('Este es tu segundo patrón activo: la foto de portada ya es obligatoria','err');
+      return;
+    }
+  }
+
+  btnGuardar.disabled = true;
+  btnGuardar.textContent = 'Guardando...';
+
+  function subirPortadaYFinalizar(){
+    if (tieneFotoNueva) {
+      subirUnaFoto(fileInput.files[0], function(url){
+        if (url && fotoActual) {
+          // se reemplazó la portada: la vieja se borra recién si el guardado completo termina bien
+          extractDriveIds(fotoActual).forEach(function(id){
+            if (fotosABorrarPatron.indexOf(id) === -1) fotosABorrarPatron.push(id);
+          });
+        }
+        subirMedidasYFinalizar(url || fotoActual);
+      });
+    } else {
+      subirMedidasYFinalizar(fotoActual);
+    }
+  }
+  function subirMedidasYFinalizar(fotoUrl){
+    if (tieneMedidasNueva) {
+      subirUnaFoto(medidasInput.files[0], function(url){
+        if (url && fotoMedidasActual) {
+          // se reemplazó la foto de medidas: la vieja se borra recién si el guardado completo termina bien
+          extractDriveIds(fotoMedidasActual).forEach(function(id){
+            if (fotosABorrarPatron.indexOf(id) === -1) fotosABorrarPatron.push(id);
+          });
+        }
+        finalizarGuardado(fotoUrl, url || fotoMedidasActual);
+      });
+    } else {
+      finalizarGuardado(fotoUrl, fotoMedidasActual);
+    }
+  }
+  subirPortadaYFinalizar();
+}
+
+/* =========================================================
+   PANTALLA 2 — DISEÑOS (posts de Blogger)
+   ========================================================= */
+function cargarDisenos(callback) {
+  if (!token || BLOG_ID.indexOf('PENDIENTE')===0) { posts = []; callback(); return; }
+  api('/posts?maxResults=500&fetchBodies=true')
+    .then(function(d){ posts = d.items || []; callback(); })
+    .catch(function(){ posts = []; callback(); });
+}
+
+function renderListaDisenos() {
+  var wrap = document.getElementById('listaDisenos');
+  if (!posts.length) {
+    wrap.innerHTML = '<div class="empty-state">Aún no hay diseños, o el blog todavía no está configurado (ver CLIENT_ID/BLOG_ID arriba en el código).</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  posts.forEach(function(post){
+    var patronId = (post.labels && post.labels[0]) || '—';
+    var div = document.createElement('div');
+    div.className = 'card listItem';
+    div.innerHTML =
+      '<div><h3>'+post.title+'</h3><p>Patrón: '+patronId+'</p></div>'+
+      '<div class="acciones"><button class="btn btn-outline" style="background:#fff" onclick="abrirFormDiseno(\''+post.id+'\')">Editar</button>'+
+      '<button class="btn btn-danger btn-icon" title="Eliminar" onclick="eliminarDiseno(\''+post.id+'\')">🗑️</button></div>';
+    wrap.appendChild(div);
+  });
+}
+
+function poblarSelectPatrones() {
+  var sel = document.getElementById('dPatron');
+  sel.innerHTML = precios.patrones.map(function(p){ return '<option value="'+p.id+'">'+p.nombre+'</option>'; }).join('');
+}
+
+function eliminarDiseno(postId) {
+  var post = posts.find(function(p){ return p.id === postId; });
+  if (!post) return;
+  askConfirm('¿Eliminar el diseño "'+post.title+'"? Esto borra el diseño y todas sus fotos de Drive. No se puede deshacer.', function(){
+    var driveIds = extractDriveIds(post.content || '');
+    deleteDriveFiles(driveIds, function(deleted, errors){
+      api('/posts/'+postId, {method:'DELETE'})
+        .then(function(){
+          var msg = 'Diseño eliminado';
+          if (driveIds.length) {
+            msg += ' · '+deleted+' foto(s) borrada(s) de Drive';
+            if (errors) msg += ' ('+errors+' con error)';
+          }
+          toast(msg);
+          posts = posts.filter(function(p){ return p.id !== postId; });
+          renderListaDisenos();
+        })
+        .catch(function(err){ toast('Error: '+err.message,'err'); });
+    });
+  });
+}
+
+function abrirFormDiseno(postId) {
+  if (!precios.patrones.length) {
+    toast('Primero crea al menos un patrón en la otra pestaña','err');
+    return;
+  }
+  editandoDisenoId = postId;
+  coloresABorrarDeDrive = [];
+  fotosSubidasEnSesion = [];
+  poblarSelectPatrones();
+  var post = postId ? posts.find(function(p){ return p.id===postId; }) : null;
+
+  document.getElementById('formDisenoTitulo').textContent = post ? 'Editar diseño' : 'Nuevo diseño';
+  document.getElementById('dNombre').value = post ? post.title : '';
+
+  var patronId;
+  if (post) {
+    var parsed = parsearContenidoDiseno(post.content);
+    patronId = parsed.patronId || (precios.patrones[0] && precios.patrones[0].id) || '';
+    document.getElementById('dPatron').value = patronId;
+    coloresEnEdicion = parsed.colores;
+    document.getElementById('dDescripcion').value = parsed.descripcion || '';
+    descripcionTocada = true; // ya tiene un valor propio guardado: no se pisa si se cambia de patrón sin querer
+  } else {
+    patronId = (precios.patrones[0] && precios.patrones[0].id) || '';
+    document.getElementById('dPatron').value = patronId;
+    coloresEnEdicion = [];
+    var patronInicial = patronPorId(patronId);
+    document.getElementById('dDescripcion').value = patronInicial ? (patronInicial.descripcion||'') : '';
+    descripcionTocada = false;
+  }
+  // Las tallas ya no se eligen por diseño: siempre son todas las del patrón elegido.
+  var patron = patronPorId(patronId);
+  tallasOfrecidasEdicion = patron ? tallasDelPatron(patron) : [];
+
+  renderTallasOfrecidas();
+  renderColoresDiseno();
+  document.getElementById('formDisenoCard').classList.remove('hidden');
+}
+
+function _ocultarFormDiseno() {
+  document.getElementById('formDisenoCard').classList.add('hidden');
+  editandoDisenoId = null;
+  coloresABorrarDeDrive = [];
+  fotosSubidasEnSesion = [];
+}
+function cerrarFormDiseno() {
+  // Botón "Cancelar": ninguna foto subida en esta sesión llegó a guardarse, así que se borran de Drive.
+  var aBorrar = fotosSubidasEnSesion.slice();
+  _ocultarFormDiseno();
+  if (aBorrar.length) {
+    deleteDriveFiles(aBorrar, function(deleted, errors){
+      var msg = 'Edición cancelada · '+deleted+' foto(s) sin guardar borrada(s) de Drive';
+      if (errors) msg += ' ('+errors+' con error)';
+      toast(msg, errors ? 'err' : null);
+    });
+  }
+}
+
+function onPatronDisenoChange() {
+  // Las tallas se recalculan solas según el patrón elegido (ya no se eligen a mano).
+  var patronId = document.getElementById('dPatron').value;
+  var patron = patronPorId(patronId);
+  tallasOfrecidasEdicion = patron ? tallasDelPatron(patron) : [];
+  if (!descripcionTocada) {
+    document.getElementById('dDescripcion').value = patron ? (patron.descripcion || '') : '';
+  }
+  renderTallasOfrecidas();
+  renderColoresDiseno();
+}
+
+function renderTallasOfrecidas() {
+  var wrap = document.getElementById('dTallasOfrecidas');
+  wrap.innerHTML = tallasOfrecidasEdicion.map(function(t){
+    return '<span class="chip sel" style="cursor:default">'+t+'</span>';
+  }).join('') || '<p style="font-size:12px;color:var(--texto-suave)">Este patrón no tiene tallas configuradas todavía.</p>';
+}
+
+function renderColoresDiseno() {
+  var wrap = document.getElementById('dColoresWrap');
+  wrap.innerHTML = '';
+  coloresEnEdicion.forEach(function(c, ci){
+    var row = document.createElement('div');
+    row.className = 'color-row';
+    var tallasHtml = tallasOfrecidasEdicion.map(function(t){
+      var agotada = c.agotadas.indexOf(t) > -1;
+      return '<span class="chip'+(agotada?' agotado':'')+'" onclick="toggleAgotado('+ci+',\''+t+'\')">'+t+(agotada?' ✕':' ✓')+'</span>';
+    }).join('');
+    var esOtro = c._otro === true;
+    row.innerHTML =
+      '<div class="hdr">'+
+        '<div class="color-select-row" style="flex:1">'+
+          '<div class="color-dot" style="background:'+(c.hex||'#AB7C67')+'"></div>'+
+          '<select class="color-select" data-ci="'+ci+'" onchange="onColorSelectChange('+ci+',this.value)"></select>'+
+        '</div>'+
+        '<img class="thumb" src="'+(c.foto||'')+'">'+
+        '<input type="file" accept="image/*" style="width:110px" onchange="subirFotoColor('+ci+',this.files[0])">'+
+        '<button class="btn btn-outline" style="background:#fff;font-size:11px" onclick="quitarColor('+ci+')">Quitar</button>'+
+      '</div>'+
+      (esOtro ?
+        '<div class="cfg-add-row">'+
+          '<input type="color" id="otroPicker'+ci+'" value="'+(c.hex||'#AB7C67')+'">'+
+          '<input type="text" id="otroNombre'+ci+'" placeholder="Nombre del color nuevo...">'+
+          '<button class="btn btn-secondary" onclick="guardarOtroColor('+ci+')">Guardar en mi lista</button>'+
+        '</div>' : '')+
+      '<div>'+(tallasHtml || '<span style="font-size:12px;color:var(--texto-suave)">Elige tallas ofrecidas arriba primero.</span>')+'</div>';
+    wrap.appendChild(row);
+    pintarSelectColor(row.querySelector('.color-select'), c);
+  });
+}
+function agregarColorDiseno(){
+  var colores = nyGetColors();
+  var primero = colores[0];
+  coloresEnEdicion.push({nombre: primero ? primero.name : 'Nuevo color', hex: primero ? primero.hex : '#AB7C67', foto:'', agotadas:[], _otro:!primero});
+  renderColoresDiseno();
+}
+function quitarColor(ci){
+  var foto = coloresEnEdicion[ci] && coloresEnEdicion[ci].foto;
+  if (foto) {
+    extractDriveIds(foto).forEach(function(id){
+      if (coloresABorrarDeDrive.indexOf(id) === -1) coloresABorrarDeDrive.push(id);
+    });
+  }
+  coloresEnEdicion.splice(ci,1);
+  renderColoresDiseno();
+}
+function onColorSelectChange(ci, val) {
+  if (val === '__otro__') {
+    coloresEnEdicion[ci]._otro = true;
+  } else {
+    var colores = nyGetColors();
+    var encontrado = colores.find(function(c){ return c.name === val; });
+    coloresEnEdicion[ci]._otro = false;
+    coloresEnEdicion[ci].nombre = val;
+    if (encontrado) coloresEnEdicion[ci].hex = encontrado.hex;
+  }
+  renderColoresDiseno();
+}
+function guardarOtroColor(ci) {
+  var nombre = document.getElementById('otroNombre'+ci).value.trim();
+  var hex = document.getElementById('otroPicker'+ci).value;
+  if (!nombre) { toast('Escribe el nombre del color','err'); return; }
+  function aplicarSeleccion(){
+    coloresEnEdicion[ci]._otro = false;
+    coloresEnEdicion[ci].nombre = nombre;
+    coloresEnEdicion[ci].hex = hex;
+    renderColoresDiseno();
+  }
+  var colores = nyGetColors();
+  if (colores.find(function(c){ return c.name.toLowerCase() === nombre.toLowerCase(); })) {
+    aplicarSeleccion();
+    return;
+  }
+  precios.coloresGuardados.push({name: nombre, hex: hex, visible: true});
+  guardarPreciosEnDrive(function(ok){
+    if (ok) {
+      toast('✅ Color "'+nombre+'" guardado', 'ok');
+      aplicarSeleccion();
+    } else {
+      precios.coloresGuardados.pop();
+      toast('No se pudo guardar el color, intenta de nuevo','err');
+    }
+  });
+}
+function toggleAgotado(ci, talla){
+  var c = coloresEnEdicion[ci];
+  var idx = c.agotadas.indexOf(talla);
+  if (idx>-1) c.agotadas.splice(idx,1); else c.agotadas.push(talla);
+  renderColoresDiseno();
+}
+function subirFotoColor(ci, file){
+  if (!file) return;
+  subirUnaFoto(file, function(url){
+    if (url){
+      var fotoVieja = coloresEnEdicion[ci].foto;
+      if (fotoVieja) {
+        // ya tenía una foto (de una edición existente) y se está reemplazando: se borra recién si se guarda
+        extractDriveIds(fotoVieja).forEach(function(id){
+          if (coloresABorrarDeDrive.indexOf(id) === -1) coloresABorrarDeDrive.push(id);
+        });
+      }
+      extractDriveIds(url).forEach(function(id){
+        if (fotosSubidasEnSesion.indexOf(id) === -1) fotosSubidasEnSesion.push(id);
+      });
+      coloresEnEdicion[ci].foto = url;
+      renderColoresDiseno();
+    }
+  });
+}
+
+/* --- Contenido del post: mismo espíritu que el formato "Nombre|#hex" ya usado hoy,
+       extendido con foto por color (misma posición/orden) y tallas agotadas por color --- */
+function construirContenidoDiseno(patronId, tallasOfrecidas, colores, descripcion) {
+  var imgs = colores.map(function(c){
+    return '<img src="'+(c.foto||'')+'" data-color="'+c.nombre+'|'+c.hex+'" style="max-width:100%;border-radius:12px;margin:4px 0;">';
+  }).join('\n');
+  var coloresLinea = colores.map(function(c){
+    return c.nombre+'|'+c.hex+'|agotado:'+c.agotadas.join('+');
+  }).join(', ');
+  // La descripción es texto libre: se escapa y los saltos de línea se guardan como <br>
+  // para que sobrevivan al guardarse como contenido de post de Blogger.
+  var descHtml = escaparTexto(descripcion||'').replace(/\n/g,'<br>');
+  return '<div class="ny-diseno" data-patron="'+patronId+'">\n'+imgs+'\n'+
+    '<p><strong>Tallas:</strong> '+tallasOfrecidas.join(',')+'</p>\n'+
+    '<p><strong>Colores:</strong> '+coloresLinea+'</p>\n'+
+    '<p><strong>Descripcion:</strong> '+descHtml+'</p>\n</div>';
+}
+
+// Inverso de construirContenidoDiseno(), para precargar el formulario al editar
+function parsearContenidoDiseno(html) {
+  var div = document.createElement('div');
+  div.innerHTML = html || '';
+  var cont = div.querySelector('.ny-diseno');
+  var patronId = cont ? cont.getAttribute('data-patron') : '';
+  var tallasMatch = (html||'').match(/Tallas:<\/strong>\s*([^<]*)/);
+  var tallasOfrecidas = tallasMatch ? tallasMatch[1].split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+  var coloresMatch = (html||'').match(/Colores:<\/strong>\s*([^<]*)/);
+  var colores = [];
+  if (coloresMatch) {
+    coloresMatch[1].split(',').forEach(function(parte){
+      var bits = parte.trim().split('|');
+      if (bits.length < 2) return;
+      var nombre = bits[0], hex = bits[1];
+      var agotado = (bits[2]||'').replace('agotado:','').split('+').map(function(s){return s.trim();}).filter(Boolean);
+      var imgEl = Array.from(div.querySelectorAll('img')).find(function(img){
+        return (img.getAttribute('data-color')||'').indexOf(nombre+'|')===0;
+      });
+      colores.push({nombre:nombre, hex:hex, foto: imgEl ? imgEl.getAttribute('src') : '', agotadas: agotado});
+    });
+  }
+  // La descripción puede tener varias líneas (<br>), por eso se captura todo hasta el </p> de cierre
+  // en vez de cortar en el primer '<' como hacen Tallas/Colores.
+  var descMatch = (html||'').match(/Descripcion:<\/strong>\s*([\s\S]*?)<\/p>/);
+  var descripcion = '';
+  if (descMatch) {
+    descripcion = desescaparTexto(descMatch[1].replace(/<br\s*\/?>/gi,'\n')).trim();
+  }
+  return {patronId:patronId, tallasOfrecidas:tallasOfrecidas, colores:colores, descripcion:descripcion};
+}
+
+function guardarDiseno() {
+  var nombre = document.getElementById('dNombre').value.trim();
+  var patronId = document.getElementById('dPatron').value;
+  var errorBox = document.getElementById('dColoresError');
+  errorBox.classList.add('hidden');
+
+  if (!nombre) { toast('El nombre del diseño es obligatorio','err'); return; }
+  if (!patronId) { toast('Elige un patrón','err'); return; }
+  if (!tallasOfrecidasEdicion.length) { toast('Este patrón no tiene tallas configuradas — agrégalas primero en la pestaña Patrones','err'); return; }
+  if (!coloresEnEdicion.length) { toast('Agrega al menos un color','err'); return; }
+
+  // Cada color debe tener al menos 1 talla disponible (no todas agotadas)
+  var colorSinStock = coloresEnEdicion.find(function(c){
+    return tallasOfrecidasEdicion.every(function(t){ return c.agotadas.indexOf(t)>-1; });
+  });
+  if (colorSinStock) {
+    errorBox.textContent = 'El color "'+colorSinStock.nombre+'" está agotado en todas las tallas — bórralo o corrige el stock.';
+    errorBox.classList.remove('hidden');
+    return;
+  }
+
+  if (BLOG_ID.indexOf('PENDIENTE')===0) {
+    toast('Falta configurar BLOG_ID/CLIENT_ID antes de poder publicar en Blogger','err');
+    return;
+  }
+
+  var btn = document.getElementById('dSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  var descripcion = document.getElementById('dDescripcion').value.trim();
+  var content = construirContenidoDiseno(patronId, tallasOfrecidasEdicion, coloresEnEdicion, descripcion);
+  var body = {title: nombre, content: content, labels: [patronId]};
+  var endpoint = editandoDisenoId ? '/posts/'+editandoDisenoId : '/posts';
+  var method = editandoDisenoId ? 'PUT' : 'POST';
+
+  api(endpoint, {method:method, body:body})
+    .then(function(updated){
+      var eraEdicion = !!editandoDisenoId;
+      var idx = posts.findIndex(function(p){ return p.id===editandoDisenoId; });
+      if (idx>-1) posts[idx]=updated; else posts.push(updated);
+      var aBorrar = coloresABorrarDeDrive.slice();
+      _ocultarFormDiseno();
+      renderListaDisenos();
+      if (aBorrar.length) {
+        deleteDriveFiles(aBorrar, function(deleted, errors){
+          var msg = (eraEdicion ? 'Diseño actualizado' : 'Diseño publicado') + ' · '+deleted+' foto(s) vieja(s) borrada(s) de Drive';
+          if (errors) msg += ' ('+errors+' con error)';
+          toast(msg, errors ? 'err' : null);
+        });
+      } else {
+        toast(eraEdicion ? 'Diseño actualizado' : 'Diseño publicado');
+      }
+    })
+    .catch(function(err){ toast('Error: '+err.message,'err'); })
+    .finally(function(){ btn.disabled=false; btn.textContent='Guardar diseño'; });
+}
+
+/* ================= INIT ================= */
+checkOAuthCallback();
+</script>
+</body>
+</html>
